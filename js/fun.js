@@ -23,10 +23,9 @@ function numToChinese(num) {
 }
 
 export const zanwo = karin.command(/^#?(全部)?(赞|超)我$/, async (e) => {
+
     let text = '赞'
-    if(e.msg.includes('超')){
-        text = '超'
-    }
+    if(e.msg.includes('超')){ text = '超' }
     let status = true
     let times = 0
     while(status == true){
@@ -66,6 +65,49 @@ export const jrys = karin.command(/^#?(今日运势|(J|j)rys)$/, async (e) => {
     const current = data.fortune
     return e.reply([
         segment.at(e.user_id),
-         ` 的${numToChinese(new Date().getDate())}号运势为……\n${current.fortuneSummary} | ${current.luckyStar}\n---\n${current.signText}\n>> ${current.unsignText}`
+        ` 的${numToChinese(new Date().getDate())}号运势为……\n${current.fortuneSummary} | ${current.luckyStar}\n---\n${current.signText}\n>> ${current.unsignText}`
+    ])
+})
+
+export const jrlp = karin.command(/^#?今日老(婆|公)$/, async (e) => {
+
+    let rand
+    if(!e.isGroup){ return }
+    const memberList = await e.bot.GetGroupMemberList(e.group_id)
+    let text = '婆'
+    if(e.msg.includes('公')){ text = '公' }
+
+    //获取数据库
+    let data = await redis.get(`Karin:fun_js:${e.user_id}_jrlp`)
+    if(data){
+        data = JSON.parse(data)
+    }else{
+        rand = memberList[Math.floor(Math.random() * memberList.length)]
+        data = {
+            qq: rand.uin,
+            nick: rand.nick,
+            time: new Date().getDate()
+        }
+    }
+
+    //处理数据
+    if(new Date().getDate() != data.time){
+        logger.info('Jrlp >> 日期变更，重新抽取老婆')
+        rand = memberList[Math.floor(Math.random() * memberList.length)]
+        data = {
+            qq: rand.uin,
+            nick: rand.nick,
+            time: new Date().getDate()
+        }
+    }
+
+    await redis.set(`Karin:fun_js:${e.user_id}_jrlp`, JSON.stringify(data))
+
+    return e.reply([
+        segment.at(e.user_id),
+        ` 你今天的老${text}是...\n`,
+        `${data.nick}(${data.qq})`,
+        segment.image(e.bot.getAvatarUrl(data.qq)),
+        `要看好她/他哦.`
     ])
 })
