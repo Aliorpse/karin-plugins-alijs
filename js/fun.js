@@ -25,7 +25,7 @@ function numToChinese(num) {
 }
 
 const getDate = () => {
-    return new Date().getDate
+    return new Date().getDate()
 }
 
 export const zanwo = karin.command(/^#?(全部)?(赞|超)我$/, async (e) => {
@@ -39,7 +39,7 @@ export const zanwo = karin.command(/^#?(全部)?(赞|超)我$/, async (e) => {
     let data = await level.get(`Karin:fun_js:zanwo:${e.user_id}`)
 
     //  检查日期
-    if (data && getDate() == data) {
+    if (getDate() == data) {
       return e.reply(`今天已经给你${text}过了哦`, { reply: true, recallMsg:5 })
     }
 
@@ -69,9 +69,11 @@ export const zanwo = karin.command(/^#?(全部)?(赞|超)我$/, async (e) => {
     times = (times-botList.length)*10
     
     if(times == 0){
-        return e.reply(`给你${text}失败啦`, { reply: true })
+        return e.reply(`${text}失败啦`, { reply: true, recallMsg: 10 })
     }
-
+    
+    await level.set(`Karin:fun_js:zanwo:${e.user_id}`, getDate())
+    
     const msgList = [
         `给你${text}了${times}次,记得回我~`,
         `给你${text}好啦`,
@@ -79,12 +81,11 @@ export const zanwo = karin.command(/^#?(全部)?(赞|超)我$/, async (e) => {
         `给你${text}好啦,一共${text}了${times}次~`
     ]
 
-    await level.set(`Karin:fun_js:zanwo:${e.user_id}`, getDate)
-    return e.reply(msgList[Math.floor(Math.random() * fortuneList.length)], { reply: true })
+    return e.reply(msgList[Math.floor(Math.random() * msgList.length)], { reply: true })
 
 },{ name: 'fun_js:赞我', priority: Number.NEGATIVE_INFINITY })
 
-export const jrys = karin.command(/^#?(今日运势|(J|j)rys)$/, async (e) => {
+export const jrys = karin.command(/^#?((今日)?运势|(J|j)rys)$/, async (e) => {
 
     //获取数据库
     let data = await level.get(`Karin:fun_js:${e.user_id}_jrys`)
