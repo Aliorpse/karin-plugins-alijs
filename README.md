@@ -3,7 +3,7 @@
 
 #### 安装与使用
 
-- 安装: 下载js文件并移动到Yunzai/plugins/example目录下<br>
+- 安装: 下载js文件并移动到Karin/plugins/karin-plugin-example目录下<br>
 - 用法: 详见各js插件内部注释
 
 #### 未来可能会填补的功能
