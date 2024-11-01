@@ -1,10 +1,13 @@
 import karin, { segment } from 'node-karin'
+import { send } from 'process'
 
 /*
  * 配置项
  * returnVideo: true/false 解析视频是否返回原视频
+ * sendImage: true/false 解析视频是否以图片形式返回消息 仍未完成
  */
 const returnVideo = false
+const sendImage = false
 
 const regB23 = /b23\.tv\\?\/\w{7}/
 const regBV = /BV1\w{9}/
@@ -95,11 +98,14 @@ export const video = karin.command(regVideo, async (e) => {
 
     if(res.code != 0){
         return fail(e,res.message,id)
-    }else{
+    }
+    if(!sendImage){
         e.reply([
             segment.image(res.data.pic),
             `${res.data.title}\nhttps://www.bilibili.com/video/${bvid}\n作者: ${res.data.owner.name}\n播放: ${formatNumber(res.data.stat.view)} | 弹幕: ${formatNumber(res.data.stat.danmaku)}\n点赞: ${formatNumber(res.data.stat.like)} | 投币: ${formatNumber(res.data.stat.coin)}\n收藏: ${formatNumber(res.data.stat.favorite)} | 评论: ${formatNumber(res.data.stat.reply)}`
         ],{ reply: true })
+    }else{
+        //todo: 图片
     }
 
     //返回原视频
@@ -160,10 +166,15 @@ export const bangumi = karin.command(regBangumi, async (e) => {
     if(res.code != 0){
         return fail(e,res.message,epid)
     }
-    return e.reply([
-        segment.image(res.result.cover),
-        `${res.result.title}\n评分: ${res.result.rating.score} / ${res.result.rating.count}\n${res.result.new_ep.desc}, ${res.result.seasons[0].new_ep.index_show}\n`,
-        "---\n",
-        `${res.result.link}\n播放: ${formatNumber(res.result.stat.views)} | 弹幕: ${formatNumber(res.result.stat.danmakus)}\n点赞: ${formatNumber(res.result.stat.likes)} | 投币: ${formatNumber(res.result.stat.coins)}\n追番: ${formatNumber(res.result.stat.favorites)} | 收藏: ${formatNumber(res.result.stat.favorite)}\n`
-    ],{ reply: true })
+    if(!sendImage){
+        return e.reply([
+            segment.image(res.result.cover),
+            `${res.result.title}\n评分: ${res.result.rating.score} / ${res.result.rating.count}\n${res.result.new_ep.desc}, ${res.result.seasons[0].new_ep.index_show}\n`,
+            "---\n",
+            `${res.result.link}\n播放: ${formatNumber(res.result.stat.views)} | 弹幕: ${formatNumber(res.result.stat.danmakus)}\n点赞: ${formatNumber(res.result.stat.likes)} | 投币: ${formatNumber(res.result.stat.coins)}\n追番: ${formatNumber(res.result.stat.favorites)} | 收藏: ${formatNumber(res.result.stat.favorite)}\n`
+        ],{ reply: true })
+    }else{
+        //todo: 图片
+    }
+
 },{ name: "B站番剧解析" })
