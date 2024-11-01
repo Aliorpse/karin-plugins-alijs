@@ -1,5 +1,11 @@
 import karin, { segment } from 'node-karin'
 
+/*
+ * 配置项
+ * returnVideo: true/false 解析视频是否返回原视频
+ */
+const returnVideo = false
+
 const regB23 = /b23\.tv\\?\/\w{7}/
 const regBV = /BV1\w{9}/
 const regAV = /av\d+/
@@ -10,6 +16,13 @@ const regEP = /ep\d+/ // episode_id 番剧剧集编号
 const regVideo = new RegExp(`${regB23.source}|${regBV.source}|${regAV.source}`)
 const regBangumi = new RegExp(`${regMD.source}|${regSS.source}|${regEP.source}`)
 
+const headers = {
+    headers: {
+        'referer': 'https://www.bilibili.com/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+    }
+}
+
 function formatNumber(num) {
     if(num < 10000){
         return num
@@ -19,13 +32,16 @@ function formatNumber(num) {
 }
 
 function fail(e,msg,id){
-    e.reply(`[${id}]解析失败\n信息: ${msg}`)
-    return
+    console.log(id)
+    if(!(e.msg == id || e.msg.includes(`bilibili` || `b站` || `B站`))){ return true }
+    return e.reply(`[${id}]解析失败\n信息: ${msg}`, { recallMsg: 5 })
+    
 }
 
 export const video = karin.command(regVideo, async (e) => {
 
     let bvid = ""
+    let id = ""
 
     //绕过其他解析bot
     if(e.msg.includes("点赞" || "投币" || "播放" || "弹幕")){ return true }
@@ -44,6 +60,7 @@ export const video = karin.command(regVideo, async (e) => {
         const xor = 177451812
         const add = 8728348608
         let x = (regAV.exec(e.msg))[0].replace(/av/g,"")
+        id = `av` + x
         x = (x ^ xor) + add
         const r = Array.from('BV1  4 1 7  ')
         for (let i = 0; i < 6; i++) {
@@ -63,24 +80,21 @@ export const video = karin.command(regVideo, async (e) => {
                 return
             }
         }catch(e){ return }
+        id = regB23.exec(e.msg)[0]
     }
 
     //BV逻辑
     if(e.msg.match(regBV)){
         bvid = regBV.exec(e.msg)
+        id = bvid
     }
 
     //开始解析
-    let res = await fetch(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`,{
-        headers: {
-            'referer': 'https://www.bilibili.com/',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }
-    })
+    let res = await fetch(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`,headers)
     res = await res.json()
 
     if(res.code != 0){
-        return fail(e,res.message,bvid)
+        return fail(e,res.message,id)
     }else{
         e.reply([
             segment.image(res.data.pic),
@@ -88,25 +102,17 @@ export const video = karin.command(regVideo, async (e) => {
         ],{ reply: true })
     }
 
-    res = await fetch(`https://api.bilibili.com/x/player/playurl?avid=${res.data.aid}&cid=${res.data.cid}&qn=16&type=mp4&platform=html5`,{
-        headers: {
-            'referer': 'https://www.bilibili.com/',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }
-    })
+    //返回原视频
+    if(!returnVideo){ return }
+    res = await fetch(`https://api.bilibili.com/x/player/playurl?avid=${res.data.aid}&cid=${res.data.cid}&qn=16&type=mp4&platform=html5`,headers)
     res = await res.json()
 
     if(!res || res.code != 0){
         return fail(e,res.message,`视频`)
     }
-    res = await (await fetch(res.data.durl[0].url,{
-        headers: {
-            'referer': 'https://www.bilibili.com/',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }
-    })).arrayBuffer()
+    res = await (await fetch(res.data.durl[0].url,headers)).arrayBuffer()
     return e.reply(segment.video('base64://' + Buffer.from(res).toString('base64')))
-})
+},{ name: "B站视频解析" })
 
 export const bangumi = karin.command(regBangumi, async (e) => {
 
@@ -124,12 +130,7 @@ export const bangumi = karin.command(regBangumi, async (e) => {
     //md逻辑
     if(e.msg.match(regMD)){
         try{
-            let temp = await (await fetch(`https://api.bilibili.com/pgc/review/user?media_id=${(regMD.exec(e.msg))[0].replace("md", "")}`,{
-                headers: {
-                    'referer': 'https://www.bilibili.com/',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-                }
-            })).json()
+            let temp = await (await fetch(`https://api.bilibili.com/pgc/review/user?media_id=${(regMD.exec(e.msg))[0].replace("md", "")}`,headers)).json()
             if(temp.code != 0){
                 return fail(e,temp.message,(regMD.exec(e.msg))[0])
             }
@@ -142,12 +143,7 @@ export const bangumi = karin.command(regBangumi, async (e) => {
         if(ssid == ""){
             ssid = (regSS.exec(e.msg))[0].replace("ss", "")
         }
-        let temp = await (await fetch(`https://api.bilibili.com/pgc/web/season/section?season_id=${ssid}`,{
-            headers: {
-                'referer': 'https://www.bilibili.com/',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-            }
-        })).json()
+        let temp = await (await fetch(`https://api.bilibili.com/pgc/web/season/section?season_id=${ssid}`,headers)).json()
         if(temp.code != 0){
             return fail(e,temp.message,ssid)
         }
@@ -160,12 +156,7 @@ export const bangumi = karin.command(regBangumi, async (e) => {
     }
 
     //开始解析
-    let res = await (await fetch(`https://api.bilibili.com/pgc/view/web/season?ep_id=${epid}`,{
-        headers: {
-            'referer': 'https://www.bilibili.com/',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }
-    })).json()
+    let res = await (await fetch(`https://api.bilibili.com/pgc/view/web/season?ep_id=${epid}`,headers)).json()
     if(res.code != 0){
         return fail(e,res.message,epid)
     }
@@ -175,4 +166,4 @@ export const bangumi = karin.command(regBangumi, async (e) => {
         "---\n",
         `${res.result.link}\n播放: ${formatNumber(res.result.stat.views)} | 弹幕: ${formatNumber(res.result.stat.danmakus)}\n点赞: ${formatNumber(res.result.stat.likes)} | 投币: ${formatNumber(res.result.stat.coins)}\n追番: ${formatNumber(res.result.stat.favorites)} | 收藏: ${formatNumber(res.result.stat.favorite)}\n`
     ],{ reply: true })
-})
+},{ name: "B站番剧解析" })
