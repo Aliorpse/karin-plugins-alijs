@@ -44,7 +44,7 @@ export const video = karin.command(regVideo, async (e) => {
     let id = ""
 
     //绕过其他解析bot
-    if(e.msg.includes("点赞" || "投币" || "播放" || "弹幕")){ return true }
+    if(e.msg.includes("点赞" || "投币" || "播放" || "弹幕" || "简介")){ return true }
 
     //由av,b23短链,BV提取出BV并解析
     // av->bv
