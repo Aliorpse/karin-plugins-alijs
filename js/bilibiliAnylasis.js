@@ -10,7 +10,7 @@ const sendVideo = false
 const sendImage = false
 const sendLink = false
 
-const regB23 = /b23\.tv\\?\/\w{7}/
+const regB23 = /(b23\.tv|bili2233.cn)\\?\/\w{7}/
 const regBV = /BV1\w{9}/
 const regAV = /av\d+/
 const regMD = /md\d+/ // media_id 番剧md号
