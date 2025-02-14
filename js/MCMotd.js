@@ -7,7 +7,7 @@ import karin, { segment, render } from 'node-karin'
 import fs from 'fs'
 
 const regMotd = /^#motd(.*)/
-const regAdd = /^#mcsadd(.*)/
+const regAddServer = /^#mcsadd(.*)/
 
 let alias;
 const baseUrl = 'https://api.mcstatus.io/v2'
@@ -19,9 +19,9 @@ if (!fs.existsSync(`${baseDataUrl}/SAlias.json`)) {
     fs.writeFileSync(`${baseDataUrl}/SAlias.json`,"{}")
 }
 
-export const mcsadd = karin.command(regAdd, async (e) => {
+export const mcsadd = karin.command(regAddServer, async (e) => {
 
-    const content = e.msg.match(regAdd)[1].replace(/\s/g, '')
+    const content = e.msg.match(regAddServer)[1].replace(/\s/g, '')
     alias = fs.readFileSync(`${baseDataUrl}/SAlias.json`)
     alias = JSON.parse(alias)
     
@@ -86,7 +86,7 @@ export const motd = karin.command(regMotd, async (e) => {
     <style>
         .body {
             width: 1000px;
-            height: 160px;
+            height: auto;
             border-radius: 20px;
         }
         .box {
@@ -138,6 +138,7 @@ IP: <span style="text-decoration: underline;">${content}</span> | 请求耗时: 
     
     fs.writeFileSync(`${baseDataUrl}/temp.html`,html)
     const img = await render.renderHtml(`${baseDataUrl}/temp.html`)
-    
-    return e.reply(segment.image(img),{ reply: true })
+    fs.writeFileSync(`${baseDataUrl}/base64.txt`,img)
+
+    return e.reply(segment.image(`base64://${img}`), { reply: true })
 })
