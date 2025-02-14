@@ -138,7 +138,6 @@ IP: <span style="text-decoration: underline;">${content}</span> | 请求耗时: 
     
     fs.writeFileSync(`${baseDataUrl}/temp.html`,html)
     const img = await render.renderHtml(`${baseDataUrl}/temp.html`)
-    fs.writeFileSync(`${baseDataUrl}/base64.txt`,img)
 
     return e.reply(segment.image(`base64://${img}`), { reply: true })
 })
