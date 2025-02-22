@@ -17,12 +17,12 @@ const Config = {
 }
 
 const regB23 = /(b23\.tv|bili2233\.cn)(\\?\/)\w{7}/
-const regBV = /bv1\w{9}/
+const regBV = /BV1\w{9}/
 const regAV = /av\d+/
 const regMD = /md\d+/
 const regSS = /ss\d+/
 const regEP = /ep\d+/
-const regSpace = /space\.bilibili\.com\/(\d+)/
+const regSpace = /space\.bilibili\.com\/\d+/
 
 async function biliRequest(url, method) {
   try {
@@ -67,7 +67,6 @@ async function b23Parser(msg) {
   try {
     const shortUrl = msg.match(regB23)[0].replace(/\\/g, '')
     const { url } = await fetch(`https://${shortUrl}`)
-    
     if (regBV.test(url)) return bvParser(url.match(regBV)[0])
     if (regAV.test(url)) return bvParser(av2bv(url.match(regAV)[0]))
     if (regMD.test(url)) return mdParser(url.match(regMD)[0])
@@ -75,6 +74,7 @@ async function b23Parser(msg) {
     if (regEP.test(url)) return epParser(url.match(regEP)[0])
     if (regSpace.test(url)) return spaceParser(url.match(regSpace)[0])
     return null
+
   } catch (e) {
     return `短链解析失败: ${e.stack}`
   }
