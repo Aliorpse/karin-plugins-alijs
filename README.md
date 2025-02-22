@@ -8,8 +8,7 @@
 
 #### 未来可能会填补的功能
 如果你对这些功能有需要，请发个issue来催更
-- biliParser.js - 分析更多的b23.tv短链类型而不止于视频 - 开发中
-- biliParser.js - 解析直播链接，个人资料链接 - 开发中
+- 暂无,欢迎提出请求
 
 #### 本项目参考了如下代码
 - [BV号转AV号](https://www.zhihu.com/question/381784377/answer/1099438784)
