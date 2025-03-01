@@ -3,16 +3,16 @@ import karin, { segment } from 'node-karin'
 const Config = {
   Video: {
     enable: true,
-    sendLink: true,
+    sendLink: false,
     sendVideo: true
   },
   Bangumi: {
     enable: true,
-    sendLink: true
+    sendLink: false
   },
   Space: {
     enable: true,
-    sendLink: true
+    sendLink: false
   }
 }
 
@@ -205,5 +205,8 @@ export const Space = karin.command(regSpace, async e => {
 
 export const b23 = karin.command(regB23, async e => {
   const result = await b23Parser(e.msg)
-  return result && e.reply(result.msg, { reply: true })
+  result && e.reply(result.msg, { reply: true })
+  if (result.data != undefined)
+    return Config.Video.sendVideo && e.reply(await videoParser(...result.data))
+  return
 })
