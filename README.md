@@ -21,7 +21,7 @@
 ## 📦 插件列表
 | 名称 | 源码 | 跳转帮助 |
 |:-----|:-----|:-----|
-| B站解析 | [BiliParser](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/biliParser.js) | [点我跳转](#BiliParser) |
+| B站解析 | [BiliParser](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/BiliParser.js) | [点我跳转](#BiliParser) |
 | MC服务器状态查询 | [MCMotd](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/MCMotd.js) | [点我跳转](#MCMotd) |
 | 运行命令 | [RunCMD](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/RunCMD.js) | [点我跳转](#RunCMD) |
 
