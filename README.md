@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 karin-plugin-alijs
+# 🤖 karin-plugins-alijs
 
 
 <p align="center">
