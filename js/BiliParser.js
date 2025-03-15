@@ -16,13 +16,15 @@ const Config = {
   }
 }
 
-const regB23 = /(b23\.tv|bili2233\.cn)(\\?\/)\w{7}/
-const regBV = /BV1\w{9}/
-const regAV = /av\d+/
-const regMD = /md\d+/
-const regSS = /ss\d+/
-const regEP = /ep\d+/
-const regSpace = /space\.bilibili\.com\/\d+/
+const regs = {
+  B23: /(b23\.tv|bili2233\.cn)(\\?\/)\w{7}/,
+  BV: /BV1\w{9}/,
+  AV: /av\d+/,
+  MD: /md\d+/,
+  SS: /ss\d+/,
+  EP: /ep\d+/,
+  Space: /space\.bilibili\.com\/\d+/
+}
 
 async function biliRequest(url, method) {
   try {
@@ -48,7 +50,7 @@ const av2bv = (() => {
   const ADD = 8728348608
 
   return av => {
-    const num = (regAV.exec(av) || [''])[0].replace(/av/gi, '')
+    const num = (regs.AV.exec(av) || [''])[0].replace(/av/gi, '')
     if (!num) return false
     
     let x = (parseInt(num, 10) ^ XOR) + ADD
@@ -65,14 +67,14 @@ const formatNumber = num =>
 
 async function b23Parser(msg) {
   try {
-    const shortUrl = msg.match(regB23)[0].replace(/\\/g, '')
+    const shortUrl = msg.match(regs.B23)[0].replace(/\\/g, '')
     const { url } = await fetch(`https://${shortUrl}`)
-    if (regBV.test(url)) return bvParser(url.match(regBV)[0])
-    if (regAV.test(url)) return bvParser(av2bv(url.match(regAV)[0]))
-    if (regMD.test(url)) return mdParser(url.match(regMD)[0])
-    if (regSS.test(url)) return ssParser(url.match(regSS)[0])
-    if (regEP.test(url)) return epParser(url.match(regEP)[0])
-    if (regSpace.test(url)) return spaceParser(url.match(regSpace)[0])
+    if (regs.BV.test(url)) return bvParser(url.match(regs.BV)[0])
+    if (regs.AV.test(url)) return bvParser(av2bv(url.match(regs.AV)[0]))
+    if (regs.MD.test(url)) return mdParser(url.match(regs.MD)[0])
+    if (regs.SS.test(url)) return ssParser(url.match(regs.SS)[0])
+    if (regs.EP.test(url)) return epParser(url.match(regs.EP)[0])
+    if (regs.Space.test(url)) return spaceParser(url.match(regs.Space)[0])
     return null
 
   } catch (e) {
@@ -169,44 +171,44 @@ async function spaceParser(mid){
     }
 }
 
-export const Video = karin.command(new RegExp(`${regBV.source}|${regAV.source}`), async e => {
-  if (!Config.Video.enable || /点赞|投币|播放|弹幕|简介|解析/.test(e.msg)) return
+export const Video = karin.command(new RegExp(`${regs.BV.source}|${regs.AV.source}`), async e => {
+  if (!Config.Video.enable || /点赞|投币|播放|弹幕|简介|解析/.test(e.msg) || (!(/B站|Bili|哔哩哔哩|视频/i).test(e.msg) &&! regs.BV.test(e.msg))) return
   
-  const [match] = e.msg.match(new RegExp(`${regBV.source}|${regAV.source}`))
+  const [match] = e.msg.match(new RegExp(`${regs.BV.source}|${regs.AV.source}`))
 
-  const bvid = regBV.test(match) ? match : av2bv(match)
+  const bvid = regs.BV.test(match) ? match : av2bv(match)
   const result = await bvParser(bvid)
   
   await e.reply(result.msg, { reply: true })
   return Config.Video.sendVideo && e.reply(await videoParser(...result.data))
 })
 
-export const Bangumi = karin.command(new RegExp(`${regSS.source}|${regEP.source}|${regMD.source}`), async e => {
-  if (!Config.Bangumi.enable || /点赞|投币|播放|弹幕|简介|解析/.test(e.msg)) return
+export const Bangumi = karin.command(new RegExp(`${regs.SS.source}|${regs.EP.source}|${regs.MD.source}`), async e => {
+  if (!Config.Bangumi.enable || /点赞|投币|播放|弹幕|简介|解析/.test(e.msg) || !(/B站|Bili|哔哩哔哩|视频/i).test(e.msg)) return
 
-  const [match] = e.msg.match(new RegExp(`${regSS.source}|${regEP.source}|${regMD.source}`))
+  const [match] = e.msg.match(new RegExp(`${regs.SS.source}|${regs.EP.source}|${regs.MD.source}`))
   let result = []
 
-  if (regMD.test(match)) result = await mdParser(match)
-  else if (regSS.test(match)) result = await ssParser(match)
+  if (regs.MD.test(match)) result = await mdParser(match)
+  else if (regs.SS.test(match)) result = await ssParser(match)
   else result = await epParser(match)
 
   return e.reply(result.msg, { reply: true })
 })
 
-export const Space = karin.command(regSpace, async e => {
+export const Space = karin.command(regs.Space, async e => {
     if (!Config.Space.enable || /粉丝|投币|收藏|等级|会员/.test(e.msg)) return
 
-    const [match] = e.msg.match(regSpace)
+    const [match] = e.msg.match(regs.Space)
     const result = await spaceParser(match)
 
     return e.reply(result.msg, { reply: true })
 })
 
-export const b23 = karin.command(regB23, async e => {
+export const b23 = karin.command(regs.B23, async e => {
   const result = await b23Parser(e.msg)
   result && e.reply(result.msg, { reply: true })
-  if (result.data != undefined)
+  if (result.hasOwnProperty('data'))
     return Config.Video.sendVideo && e.reply(await videoParser(...result.data))
   return
 })
