@@ -24,6 +24,7 @@
 | B站解析 | [BiliParser](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/BiliParser.js) | [点我跳转](#BiliParser) |
 | MC服务器状态查询 | [MCMotd](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/MCMotd.js) | [点我跳转](#MCMotd) |
 | 运行命令 | [RunCMD](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/RunCMD.js) | [点我跳转](#RunCMD) |
+| GH仓库缩略图 | [GHGraphs](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/GHGraphs.js) | [点我跳转](#GHGraphs) |
 
 ## 📚 使用说明
 - ### BiliParser
@@ -42,11 +43,14 @@
     - `#mcsadd [Address]` 添加群聊默认服务器
 
 - ### RunCMD
-  本插件用于方便地调用终端执行命令。仅机器人主人拥有使用权限。
+  本插件用于方便地调用终端执行命令。仅 Bot 主人拥有使用权限。
   > 这个插件还未在除了我的 Windows 以外的任何机器测试过。如果你使用这个插件时出现乱码等错误，请反馈
   
     用法:
     - `(#|/)cmd [command]` 执行指令
+
+- ### GHGraphs
+  检测群聊中的 GitHub 仓库链接并解析它们，返回图片。
 
 ## 🙏 致谢
 - [BV号转AV号](https://www.zhihu.com/question/381784377/answer/1099438784)
