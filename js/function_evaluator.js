@@ -1,4 +1,15 @@
-// 手动导入, 另下 qpdf 并添加到 path
+// 需要安装 qpdf 并且将它添加至环境变量中, 否则无法加密 pdf
+// 需要额外添加的包: sharp crypto axios pdfkit
+
+// 脚本基于类二分法找到漫画关键元数据, 直接访问图片链接, 不会被 cf 拦住 (你得有个能正常访问的IP)
+// 但也正因为这样, 绕过了爬取元数据的方法, 导致执行会稍慢
+//
+// 并发处理数不要太高, 爱护jm谢谢, 请注意这个数不会影响获取元数据的速度
+// 总处理速度基于你的网络环境和电脑配置
+
+// 插件用法: #求导+要导的数
+// 例如 #求导350234
+
 import sharp from 'sharp'
 import crypto from 'crypto'
 import axios from 'axios'
@@ -6,11 +17,18 @@ import fs from 'fs'
 import path from 'path'
 import PDFDocument from 'pdfkit'
 import { execSync } from 'child_process'
-import { karin, karinPathTemp } from 'node-karin'
+import { karin, karinPathBase } from 'node-karin'
 
-const cdn_index = 3
-const baseUrl = `https://cdn-msp${cdn_index}.18comic.vip/media/photos/`
+const CONFIG = {
+  // CDN节点
+  // 可以的值为 "", 2 ,3
+  // 哪个访问快就用哪个, 我懒得做ping测试了
+  CDN_INDEX: 3,
+  // 下载图片并发连接数, 过高可能被封禁?
+  MAX_CONNECTIONS: 10,
+}
 
+const baseUrl = `https://cdn-msp${CONFIG.CDN_INDEX}.18comic.vip/media/photos/`
 async function getMaxPageNum(aid) {
   let maxNum = 0
   let current = 1
@@ -75,7 +93,7 @@ function getNum(aid, parentId) {
   return [2,4,6,8,10,12,14,16,18,20][code % 10]
 }
 
-async function scrambleImageWebP(inputBuffer, outputPath, aid, parentId) {
+async function scrambleImageWebP(inputBuffer, aid, parentId) {
   try {
     const image = sharp(inputBuffer)
     const metadata = await image.metadata()
@@ -101,7 +119,7 @@ async function scrambleImageWebP(inputBuffer, outputPath, aid, parentId) {
       })
     )
 
-    await sharp({
+    return await sharp({
       create: {
         width,
         height,
@@ -114,21 +132,20 @@ async function scrambleImageWebP(inputBuffer, outputPath, aid, parentId) {
       top: i === 0 ? 0 : partHeight * i + remainder,
       left: 0
     })))
-    .toFile(outputPath)
+    .jpeg({ quality: 90 })
+    .toBuffer()
   } catch (err) {
-    console.error(`处理失败 ${outputPath}:`, err)
+    console.error(`处理失败:`, err)
+    throw err
   }
 }
 
-async function batchProcessImages(aid, outputDir) {
+async function processImages(aid) {
   const maxNum = await getMaxPageNum(aid)
+  if(maxNum == 0) return false
   console.log(`检测到最大页数: ${maxNum}`)
 
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true })
-  }
-
-  async function processWithConcurrencyLimit(tasks, concurrency = 5) {
+  async function processWithConcurrencyLimit(tasks, concurrency) {
     const results = []
     const running = new Set()
 
@@ -159,59 +176,45 @@ async function batchProcessImages(aid, outputDir) {
 
   for (let i = 1; i <= maxNum; i++) {
     const paddedNum = String(i).padStart(5, '0')
-    const fileName = `${paddedNum}.webp`
-    const url = `${baseUrl}${aid}/${fileName}`
-    const outputPath = path.join(outputDir, fileName)
+    const url = `${baseUrl}${aid}/${paddedNum}.webp`
 
     tasks.push(async () => {
       try {
         const response = await axios.get(url, { responseType: 'arraybuffer' })
         const buffer = Buffer.from(response.data, 'binary')
-        await scrambleImageWebP(buffer, outputPath, parseInt(aid, 10), paddedNum)
-        return { success: true, file: outputPath }
+        const processedBuffer = await scrambleImageWebP(buffer, parseInt(aid, 10), paddedNum)
+        return { 
+          success: true, 
+          pageNum: i,
+          buffer: processedBuffer 
+        }
       } catch (error) {
         console.error(`处理 ${url} 失败:`, error.message)
-        return { success: false, file: url, error: error.message }
+        return { success: false, pageNum: i, error: error.message }
       }
     })
   }
 
-  const results = await processWithConcurrencyLimit(tasks)
+  const results = await processWithConcurrencyLimit(tasks, CONFIG.MAX_CONNECTIONS)
   const successful = results.filter(r => r && r.success).length
   console.log(`处理完成。成功: ${successful}/${tasks.length}`)
-  return results.filter(r => r && r.success).map(r => r.file)
+  
+  return results
+    .filter(r => r && r.success)
+    .sort((a, b) => a.pageNum - b.pageNum)
 }
 
-async function convertWebPToJpg(webpPath) {
-  const jpgPath = webpPath.replace('.webp', '.jpg')
-  await sharp(webpPath)
-    .jpeg({ quality: 90 })
-    .toFile(jpgPath)
-  return jpgPath
-}
-
-async function createPdf(imagePaths, outputPath) {
-  return new Promise(async (resolve, reject) => {
+async function createPdf(imageResults, outputPath) {
+  return new Promise((resolve, reject) => {
     try {
-      const sortedPaths = imagePaths.sort((a, b) => {
-        const numA = parseInt(path.basename(a).split('.')[0], 10)
-        const numB = parseInt(path.basename(b).split('.')[0], 10)
-        return numA - numB
-      })
-
-      const jpgPaths = []
-      for (const webpPath of sortedPaths) {
-        const jpgPath = await convertWebPToJpg(webpPath)
-        jpgPaths.push(jpgPath)
-      }
       const doc = new PDFDocument({ autoFirstPage: false })
       const writeStream = fs.createWriteStream(outputPath)
 
       doc.pipe(writeStream)
 
-      for (const imgPath of jpgPaths) {
+      for (const result of imageResults) {
         try {
-          const img = doc.openImage(imgPath)
+          const img = doc.openImage(result.buffer)
           const pdfWidth = doc.page ? doc.page.width - 40 : 595 - 40
           const pdfHeight = doc.page ? doc.page.height - 40 : 842 - 40
           const imgWidth = img.width
@@ -230,25 +233,18 @@ async function createPdf(imagePaths, outputPath) {
           }
 
           doc.addPage({ size: [finalWidth + 40, finalHeight + 40] })
-          doc.image(imgPath, 20, 20, {
+          doc.image(result.buffer, 20, 20, {
             width: finalWidth,
             height: finalHeight
           })
         } catch (err) {
-          console.error(`添加图片 ${imgPath} 到PDF时出错:`, err)
+          console.error(`添加图片 ${result.pageNum} 到PDF时出错:`, err)
         }
       }
 
       doc.end()
 
       writeStream.on('finish', () => {
-        jpgPaths.forEach(jpgPath => {
-          try {
-            fs.unlinkSync(jpgPath)
-          } catch (err) {
-            console.error(`删除临时文件 ${jpgPath} 时出错:`, err)
-          }
-        })
         resolve(outputPath)
       })
 
@@ -265,6 +261,8 @@ function encryptPdf(inputPath, outputPath, password) {
   try {
     execSync(`qpdf --encrypt "${password}" "${password}" 256 -- "${inputPath}" "${outputPath}"`)
     console.log(`已生成加密PDF: ${outputPath}`)
+    // Remove the unencrypted PDF
+    fs.unlinkSync(inputPath)
     return outputPath
   } catch (err) {
     console.error('PDF加密失败:', err)
@@ -282,14 +280,13 @@ export const functionEvaluator = karin.command(regex, async (e) => {
   try {
     const aid = e.msg.match(regex)[1].trim()
     if (!aid) return e.reply('你没有输入要导的数~')
+    
+    const pluginDir =path.join(karinPathBase, `/temp/function_evaluator/`)
 
-    const tempDir = path.join(karinPathTemp, `jmc_images_${aid}`)
-    const pdfDir = path.join(karinPathTemp, `jmc_pdf_${aid}`)
-    if (!fs.existsSync(pdfDir)) {
-      fs.mkdirSync(pdfDir, { recursive: true })
-    }
-    const pdfPath = path.join(pdfDir, 'raw.pdf')
-    const encryptedPdfPath = path.join(karinPathTemp, `jmc_pdf_${aid}/encrypted.pdf`)
+    if (!fs.existsSync(pluginDir)) fs.mkdirSync(pluginDir, { recursive: true })
+
+    const pdfPath = path.join(pluginDir, `/jmc_${aid}_raw.pdf`)
+    const encryptedPdfPath = path.join(pluginDir, `/jmc_${aid}_encrypted.pdf`)
 
     if (fs.existsSync(encryptedPdfPath)) {
       return await sendFile(e, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
@@ -297,8 +294,15 @@ export const functionEvaluator = karin.command(regex, async (e) => {
 
     try {
       const { messageId } = await e.reply(`开始对 ${aid} 求导, 请稍后~`, { reply: true })
-      const processedImagePaths = await batchProcessImages(aid, tempDir)
-      await createPdf(processedImagePaths, pdfPath)
+      
+      const processedImages = await processImages(aid)
+
+      if (!processedImages) {
+        await e.bot.recallMsg(e.contact, messageId)
+        return e.reply('我还不会求导它...问问别人吧?', { reply: true })
+      }
+
+      await createPdf(processedImages, pdfPath)
 
       const the_zero = [
         'ln(1)',
@@ -316,11 +320,13 @@ export const functionEvaluator = karin.command(regex, async (e) => {
       e.reply(`求导 ${aid} 完成, 结果为 ${the_zero[randomIndex]} , 正在生成解题过程...`, { reply: true })
 
       await encryptPdf(pdfPath, encryptedPdfPath, aid)
+      
       await e.bot.recallMsg(e.contact, messageId)
+      
       return await sendFile(e, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
-    } catch (e) {
-      console.error(e)
-      return e.reply('处理时发生错误: ' + e.msg)
+    } catch (err) {
+      console.error(err)
+      return e.reply('处理时发生错误: ' + err.message)
     }
   } finally {
     isProcessing = false
