@@ -25,6 +25,7 @@
 | MC服务器状态查询 | [MCMotd](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/MCMotd.js) | [点我跳转](#MCMotd) |
 | 运行命令 | [RunCMD](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/RunCMD.js) | [点我跳转](#RunCMD) |
 | GH仓库缩略图 | [GHGraphs](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/GHGraphs.js) | [点我跳转](#GHGraphs) |
+| 函数求**导**器 |[FuncEvaluator](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/function_evaluator.js) | [点我跳转](#FuncEvaluator) |
 
 ## 📚 使用说明
 - ### BiliParser
@@ -52,7 +53,19 @@
 - ### GHGraphs
   检测群聊中的 GitHub 仓库链接并解析它们，返回图片。
 
+- ### FuncEvaluator
+  非常方便地返回一个常数的导数, 附上求导过程
+  > 在处理数字比较小时分割算法不准确, 求pr QAQ
+
+    配置文件:
+    - `CDN_INDEX`: 求导时请求的CDN节点
+    - `MAX_CONNECTIONS`: 处理常数时的最大并发连接数
+  
+    用法:
+    - `(#|/)求导[常数]` 开! 导!
+
 ## 🙏 致谢
 - [BV号转AV号](https://www.zhihu.com/question/381784377/answer/1099438784)
 - [B站API User-Agent](https://gitee.com/SmallK111407/earth-k-plugin)
 - [我的世界服务器查询API](https://github.com/CikeyQi/mc-plugin)
+- [导数分割算法](https://github.com/hect0x7/JMComic-Crawler-Python)
