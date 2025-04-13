@@ -1,14 +1,11 @@
 // 需要安装 qpdf 并且将它添加至环境变量中, 否则无法加密 pdf
 // 需要额外添加的包: sharp crypto axios pdfkit
 
-// 基于类二分法找到漫画关键元数据, 直接访问图片链接, 不会被 cf 拦住 (你得有个能正常访问的IP)
+// 脚本基于类二分法找到漫画关键元数据, 直接访问图片链接, 不会被 cf 拦住 (你得有个能正常访问的IP)
 // 但也正因为这样, 绕过了爬取元数据的方法, 导致执行会稍慢
 //
-// 并发处理数不要太高, 爱护 jm 谢谢, 请注意这个数不会影响获取元数据的速度
+// 并发处理数不要太高, 爱护jm谢谢, 请注意这个数不会影响获取元数据的速度
 // 总处理速度基于你的网络环境和电脑配置
-
-// 插件用法: #求导+要导的数
-// 例如 #求导350234
 
 import sharp from 'sharp'
 import crypto from 'crypto'
@@ -17,7 +14,7 @@ import fs from 'fs'
 import path from 'path'
 import PDFDocument from 'pdfkit'
 import { execSync } from 'child_process'
-import { karin, karinPathBase } from 'node-karin'
+import { karin, karinPathBase, logger } from 'node-karin'
 
 const CONFIG = {
   // CDN节点
@@ -135,7 +132,7 @@ async function scrambleImageWebP(inputBuffer, aid, parentId) {
     .jpeg({ quality: 90 })
     .toBuffer()
   } catch (err) {
-    console.error(`处理失败:`, err)
+    logger.error(`处理失败:`, err)
     throw err
   }
 }
@@ -143,7 +140,7 @@ async function scrambleImageWebP(inputBuffer, aid, parentId) {
 async function processImages(aid) {
   const maxNum = await getMaxPageNum(aid)
   if(maxNum == 0) return false
-  console.log(`检测到最大页数: ${maxNum}`)
+  logger.info(`检测到最大页数: ${maxNum}`)
 
   async function processWithConcurrencyLimit(tasks, concurrency) {
     const results = []
@@ -154,7 +151,7 @@ async function processImages(aid) {
         try {
           return await task()
         } catch (error) {
-          console.error('任务出错:', error)
+          logger.error('任务出错:', error)
           return null
         }
       })()
@@ -189,7 +186,7 @@ async function processImages(aid) {
           buffer: processedBuffer 
         }
       } catch (error) {
-        console.error(`处理 ${url} 失败:`, error.message)
+        logger.error(`处理 ${url} 失败:`, error.message)
         return { success: false, pageNum: i, error: error.message }
       }
     })
@@ -197,7 +194,7 @@ async function processImages(aid) {
 
   const results = await processWithConcurrencyLimit(tasks, CONFIG.MAX_CONNECTIONS)
   const successful = results.filter(r => r && r.success).length
-  console.log(`处理完成。成功: ${successful}/${tasks.length}`)
+  logger.info(`处理完成。成功: ${successful}/${tasks.length}`)
   
   return results
     .filter(r => r && r.success)
@@ -238,7 +235,7 @@ async function createPdf(imageResults, outputPath) {
             height: finalHeight
           })
         } catch (err) {
-          console.error(`添加图片 ${result.pageNum} 到PDF时出错:`, err)
+          logger.error(`添加图片 ${result.pageNum} 到PDF时出错:`, err)
         }
       }
 
@@ -260,12 +257,12 @@ async function createPdf(imageResults, outputPath) {
 function encryptPdf(inputPath, outputPath, password) {
   try {
     execSync(`qpdf --encrypt "${password}" "${password}" 256 -- "${inputPath}" "${outputPath}"`)
-    console.log(`已生成加密PDF: ${outputPath}`)
+    logger.info(`已生成加密PDF: ${outputPath}`)
     // Remove the unencrypted PDF
     fs.unlinkSync(inputPath)
     return outputPath
   } catch (err) {
-    console.error('PDF加密失败:', err)
+    logger.error('PDF加密失败:', err)
     throw err
   }
 }
@@ -296,13 +293,10 @@ export const functionEvaluator = karin.command(regex, async (e) => {
       const { messageId } = await e.reply(`开始对 ${aid} 求导, 请稍后~`, { reply: true })
       
       const processedImages = await processImages(aid)
-
       if (!processedImages) {
         await e.bot.recallMsg(e.contact, messageId)
         return e.reply('我还不会求导它...问问别人吧?', { reply: true })
       }
-
-      await createPdf(processedImages, pdfPath)
 
       const the_zero = [
         'ln(1)',
@@ -315,17 +309,18 @@ export const functionEvaluator = karin.command(regex, async (e) => {
         'integral(0 dx)',
         '(7*8*9+114514)^0 - 1'
       ]
-
       const randomIndex = Math.floor(Math.random() * the_zero.length)
-      e.reply(`求导 ${aid} 完成, 结果为 ${the_zero[randomIndex]} , 正在生成解题过程...`, { reply: true })
 
+      e.bot.recallMsg(e.contact, messageId)
+      const { messageId: messageId2 } = await e.reply(`求导 ${aid} 完成, 结果为 ${the_zero[randomIndex]} , 正在生成解题过程...`, { reply: true })
+
+      await createPdf(processedImages, pdfPath)
       await encryptPdf(pdfPath, encryptedPdfPath, aid)
       
-      await e.bot.recallMsg(e.contact, messageId)
-      
-      return await sendFile(e, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
+      await sendFile(e, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
+      return await e.bot.recallMsg(e.contact, messageId2)
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       return e.reply('处理时发生错误: ' + err.message)
     }
   } finally {
