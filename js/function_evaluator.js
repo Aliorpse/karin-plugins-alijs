@@ -24,9 +24,10 @@ function getNum(aid, parentId) {
     .update(String(aid + parentId))
     .digest('hex')
   const code = hash.charCodeAt(hash.length - 1)
-  if (parseInt(aid, 10) > 421926) {
+  if (aid < 268850)
+    return 10
+  if (parseInt(aid, 10) > 421926)
     return [2,4,6,8,10,12,14,16][code % 8]
-  }
   return [2,4,6,8,10,12,14,16,18,20][code % 10]
 }
 
@@ -193,7 +194,7 @@ export const functionEvaluator = karin.command(regex, async (e) => {
     const { messageId } = await e.reply(`开始对 ${aid} 求导, 请稍后~`, { reply: true })
     
     const processedImages = await processImages(aid)
-    if (!processedImages) {
+    if (processedImages.length === 0) {
       await e.bot.recallMsg(e.contact, messageId)
       return e.reply('我还不会求导它...问问别人吧?', { reply: true })
     }
