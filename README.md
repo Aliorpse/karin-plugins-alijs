@@ -58,7 +58,7 @@
   > 在处理数字比较小时分割算法不准确, 求pr QAQ
 
     配置文件:
-    - `CDN_INDEX`: 求导时请求的CDN节点
+    - `CDN_ID`: 求导时请求的CDN节点
     - `MAX_CONNECTIONS`: 处理常数时的最大并发连接数
   
     用法:
