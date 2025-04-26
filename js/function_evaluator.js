@@ -185,7 +185,7 @@ export const functionEvaluator = karin.command(regex, async (e) => {
     const encryptedPdfPath = path.join(pluginDir, `/jmc_${aid}_encrypted.pdf`)
 
     if (fs.existsSync(encryptedPdfPath)) {
-      return await sendFile(e, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
+      return await e.bot.uploadFile(e.contact, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
     }
 
     const { messageId } = await e.reply(`开始对 ${aid} 求导, 请稍后~`, { reply: true })
