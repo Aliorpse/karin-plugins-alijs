@@ -125,30 +125,35 @@ async function processImages(aid) {
 
 async function createPdf(imageResults, outputPath) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ autoFirstPage: false })
-    const writeStream = fs.createWriteStream(outputPath)
+    const doc = new PDFDocument({
+      autoFirstPage: false,
+      size: 'A4',
+      margins: { top: 20, left: 20, right: 20, bottom: 20 }
+    })
 
+    const writeStream = fs.createWriteStream(outputPath)
     doc.pipe(writeStream)
+
+    const pageWidth = 595.28
+    const pageHeight = 841.89
+    const contentWidth = pageWidth - 40
+    const contentHeight = pageHeight - 40
 
     for (const result of imageResults) {
       const img = doc.openImage(result.buffer)
-      const pdfWidth = doc.page ? doc.page.width - 40 : 595 - 40
-      const pdfHeight = doc.page ? doc.page.height - 40 : 842 - 40
-      const imgWidth = img.width
-      const imgHeight = img.height
       
-      let finalWidth, finalHeight
-      if (imgWidth > pdfWidth || imgHeight > pdfHeight) {
-        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
-        finalWidth = imgWidth * ratio
-        finalHeight = imgHeight * ratio
-      } else {
-        finalWidth = imgWidth
-        finalHeight = imgHeight
-      }
+      const scaleRatio = Math.min(
+        contentWidth / img.width,
+        contentHeight / img.height
+      )
+      
+      const finalWidth = img.width * scaleRatio
+      const finalHeight = img.height * scaleRatio
+      const xPos = (pageWidth - finalWidth) / 2
+      const yPos = (pageHeight - finalHeight) / 2
 
-      doc.addPage({ size: [finalWidth + 40, finalHeight + 40] })
-      doc.image(result.buffer, 20, 20, {
+      doc.addPage({ size: [pageWidth, pageHeight] })
+      doc.image(img, xPos, yPos, {
         width: finalWidth,
         height: finalHeight
       })
