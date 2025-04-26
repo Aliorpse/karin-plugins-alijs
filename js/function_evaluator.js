@@ -13,11 +13,11 @@ import { execSync } from 'child_process'
 import { karin, karinPathBase, logger } from 'node-karin'
 
 const CONFIG = {
-  CDN_INDEX: 3,
+  CDN_ID: 'cdn-msp3',
   MAX_CONNECTIONS: 8
 }
 
-const baseUrl = `https://cdn-msp${CONFIG.CDN_INDEX}.18comic.vip/media/photos/`
+const baseUrl = `https://${CONFIG.CDN_ID}.18comic.vip/media/photos/`
 
 function getScrambleNum(aid, pageStr) {
   aid = parseInt(aid, 10)
@@ -167,14 +167,6 @@ function encryptPdf(inputPath, outputPath, password) {
   return outputPath
 }
 
-const sendFile = async (ctx, filePath, filename) => {
-  try {
-    await ctx.bot.uploadFile(ctx.contact, filePath, filename)
-  } catch (error) {
-    ctx.reply(`上传失败: ${error.message}`, { reply: true })
-  }
-}
-
 let isProcessing = false
 const regex = /^(?:#|\/)?求导(\d*)$/
 
@@ -204,17 +196,7 @@ export const functionEvaluator = karin.command(regex, async (e) => {
       return e.reply('我还不会求导它...问问别人吧?', { reply: true })
     }
 
-    const the_zero = [
-      'ln(1)',
-      'sin(0)',
-      'cos(pi/2)',
-      'tan(0)',
-      'e^0 - 1',
-      'log(1)',
-      'sqrt(0)',
-      'integral(0 dx)',
-      '(7*8*9+114514)^0 - 1'
-    ]
+    const the_zero = [ 'ln(1)', 'sin(0)', 'cos(pi/2)', 'tan(0)', 'e^0 - 1', 'log(1)', 'sqrt(0)', 'integral(0 dx)', '(7*8*9+114514)^0 - 1' ]
     const randomIndex = Math.floor(Math.random() * the_zero.length)
 
     e.bot.recallMsg(e.contact, messageId)
@@ -223,9 +205,13 @@ export const functionEvaluator = karin.command(regex, async (e) => {
     await createPdf(processedImages, pdfPath)
     await encryptPdf(pdfPath, encryptedPdfPath, aid)
     
-    await sendFile(e, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
+    await e.bot.uploadFile(e.contact, encryptedPdfPath, `对 ${aid} 的求导过程.pdf`)
     return await e.bot.recallMsg(e.contact, messageId2)
-  } finally {
+  } catch (error) {
+    logger.error(error)
+    return e.reply('出错了, 请查看控制台', { reply: true })
+  }
+   finally {
     isProcessing = false
   }
 })
