@@ -19,24 +19,29 @@ const CONFIG = {
 
 const baseUrl = `https://cdn-msp${CONFIG.CDN_INDEX}.18comic.vip/media/photos/`
 
-function getNum(aid, parentId) {
-  const hash = crypto.createHash('md5')
-    .update(String(aid + parentId))
+function getScrambleNum(aid, pageStr) {
+  aid = parseInt(aid, 10)
+  if (aid < 220980) return 0
+  if (aid < 268850) return 10
+
+  const code = crypto.createHash('md5')
+    .update(String(aid + pageStr))
     .digest('hex')
-  const code = hash.charCodeAt(hash.length - 1)
-  if (aid < 268850)
-    return 10
-  if (parseInt(aid, 10) > 421926)
-    return [2,4,6,8,10,12,14,16][code % 8]
-  return [2,4,6,8,10,12,14,16,18,20][code % 10]
+    .charCodeAt(31)
+
+  const arraySize = aid < 421926 ? 10 : 8
+  return Array.from({ length: arraySize }, (_, i) => (i + 1) * 2)[code % arraySize]
 }
 
-async function scrambleImageWebP(inputBuffer, aid, parentId) {
+async function scrambleImageWebP(inputBuffer, aid, pageStr) {
   const image = sharp(inputBuffer)
+  const splitCount = getScrambleNum(aid, pageStr)
+  if (splitCount === 0) 
+    return image.jpeg({ quality: 90 }).toBuffer()
+
   const metadata = await image.metadata()
   const width = parseInt(metadata.width, 10)
   const height = parseInt(metadata.height, 10)
-  const splitCount = getNum(aid, parentId)
   const partHeight = Math.floor(height / splitCount)
   const remainder = height % splitCount
 
