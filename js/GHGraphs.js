@@ -11,4 +11,4 @@ export const GHGraphs = karin.command(regGH, async (e) => {
 
     const repoPath = match[0].replace("github.com/", "")
     return e.reply(segment.image(`${API_URL}/${PLUGIN_ID}/${repoPath}`))
-})
+});
