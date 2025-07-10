@@ -66,6 +66,4 @@
 
 ## 致谢
 - [BV号转AV号](https://www.zhihu.com/question/381784377/answer/1099438784)
-- [B站API User-Agent](https://gitee.com/SmallK111407/earth-k-plugin)
-- [我的世界服务器查询API](https://github.com/CikeyQi/mc-plugin)
 - [导数分割算法](https://github.com/hect0x7/JMComic-Crawler-Python)
