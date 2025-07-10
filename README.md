@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 karin-plugins-alijs
+# karin-plugins-alijs
 
 
 <p align="center">
@@ -9,16 +9,16 @@
   <img src="https://img.shields.io/github/stars/Aliorpse/karin-plugins-alijs?style=for-the-badge" alt="stars">
 </p>
 
-<p align="center">个人 Karin 框架 App 插件仓库</p>
+<i align="center">简洁，强大，快速的 Karin App 插件仓库。</i>
 
 </div>
 
-## 📥 安装
+## 安装
 
 - 安装: 下载 js 文件并移动到Karin/plugins/karin-plugin-example目录下
 - 用法: 详见各 App 插件内部注释
 
-## 📦 插件列表
+## 插件列表
 | 名称 | 源码 | 跳转帮助 |
 |:-----|:-----|:-----|
 | B站解析 | [BiliParser](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/BiliParser.js) | [点我跳转](#BiliParser) |
@@ -27,10 +27,10 @@
 | GH仓库缩略图 | [GHGraphs](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/GHGraphs.js) | [点我跳转](#GHGraphs) |
 | 函数求**导**器 |[FuncEvaluator](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/function_evaluator.js) | [点我跳转](#FuncEvaluator) |
 
-## 📚 使用说明
+## 使用说明
 - ### BiliParser
-  本插件用于B站链接解析。可以解析视频<del>，番剧，个人空间，</del>(冗余功能, 已移除, 可自行寻找老版本) 以及短链。<br>
-  插件根据 BV 号, AV 号等匹配,发送链接或BV号等均可返回解析(除了个人空间)
+  本插件用于B站链接解析。可以解析视频<del>，番剧，个人空间，</del>(冗余功能，已移除，可自行寻找老版本) 以及短链。<br>
+  插件根据 BV 号，AV 号等匹配，发送链接或BV号等均可返回解析(除了个人空间)
   
     配置文件:
     - `sendLink`: 信息是否包括原链接
@@ -55,6 +55,7 @@
 
 - ### FuncEvaluator
   非常方便地返回一个常数的**导**数, 附上求导过程
+  > 确保网络**畅通**。没有编写网络不畅的处理逻辑。
 
     配置文件:
     - `CDN_ID`: 求导时请求的CDN节点
@@ -63,7 +64,7 @@
     用法:
     - `(#|/)求导[常数]` 开! 导!
 
-## 🙏 致谢
+## 致谢
 - [BV号转AV号](https://www.zhihu.com/question/381784377/answer/1099438784)
 - [B站API User-Agent](https://gitee.com/SmallK111407/earth-k-plugin)
 - [我的世界服务器查询API](https://github.com/CikeyQi/mc-plugin)
