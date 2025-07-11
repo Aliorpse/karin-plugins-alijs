@@ -70,7 +70,7 @@ async function aVParser(id) {
     return await bVParser(BVID)
 }
 
-let forwardNews = null
+let forwardOptions = null
 
 async function bVParser(id) {
     const { code, data, message } = await getAPI(`https://api.bilibili.com/x/web-interface/view?bvid=${id}`)
@@ -79,7 +79,12 @@ async function bVParser(id) {
     }
 
     const { title, pic, stat } = data
-    forwardNews = [ { text: `[B站解析] ${title}` } ]
+    forwardOptions = {
+        news: [ { text: `[B站解析] ${title}` } ],
+        prompt: `test1`,
+        summary: `点击查看解析详情`,
+        source: `B站视频解析`
+    }
 
     return makeForward(
         [
@@ -97,7 +102,7 @@ async function bVParser(id) {
             (CONFIG.video.sendVideo ? [await getVideo(data.aid, data.cid, id)] : [])
         ],
         `114514`,
-        `karin-plugin-alijs`
+        `karin-plugins-alijs`
     )
 }
 
@@ -110,12 +115,7 @@ export const BVAVParser = karin.command(new RegExp(`${REGEX.BV.source}|${REGEX.A
     const msg = REGEX.BV.test(match) ? await bVParser(match) : await aVParser(match)
 
     try {
-        await e.bot.sendForwardMsg(e.contact, msg, {
-            news: forwardNews,
-            prompt: `test1`,
-            summary: `点击查看解析详情`,
-            source: `B站视频解析`
-        })
+        await e.bot.sendForwardMsg(e.contact, msg, forwardOptions)
     } catch (err) {
         e.reply(`B站视频解析失败: ${err.message}`)
     } finally {
@@ -145,12 +145,7 @@ export const B23Parser = karin.command(REGEX.B23, async e => {
             msg = null
         }
 
-        if (msg) await e.bot.sendForwardMsg(e.contact, msg, {
-            news: forwardNews,
-            prompt: `test1`,
-            summary: `点击查看解析详情`,
-            source: `B站短链解析`
-        })
+        if (msg) await e.bot.sendForwardMsg(e.contact, msg, forwardOptions)
     } catch (err) {
         e.reply(`B站短链解析失败: ${err.stack}`)
     } finally {
