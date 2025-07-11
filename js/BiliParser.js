@@ -136,7 +136,7 @@ export const B23Parser = karin.command(REGEX.B23, async e => {
 
         if (AVMatch || BVMatch) {
             // 仅当短链指向视频时才发送 解析中 消息
-            const { messageId } = e.reply(`解析中, 请稍后...`, { reply: true })
+            const { messageId } = await e.reply(`解析中, 请稍后...`, { reply: true })
             msgId = messageId
 
             if (BVMatch) msg = await bVParser(BVMatch[0])
