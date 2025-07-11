@@ -27,21 +27,21 @@ async function getAPI(url, isJson = true) {
     }
 }
 
-String.prototype.toBV = function() {
+String.prototype.toBV = function () {
     const TABLE = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
     const TR = {}
     for (let i = 0; i < 58; i++) TR[TABLE[i]] = i
-        
+
     const S = [11, 10, 3, 8, 4, 6]
     const XOR = 177451812
     const ADD = 8728348608
 
     const num = (REGEX.AV.exec(this) || [''])[0].replace(/av/gi, '')
     if (!num) return false
-    
+
     let x = (parseInt(num, 10) ^ XOR) + ADD
     const r = Array.from('BV1  4 1 7  ')
-    
+
     S.forEach((pos, i) => r[pos] = TABLE[Math.floor(x / (58 ** i)) % 58])
 
     return r.join('').replace(/\s/g, '0')
@@ -65,8 +65,12 @@ async function getVideo(aid, cid, bvid) {
 
 async function aVParser(id) {
     const BVID = id.toBV()
+    if (!BVID) return segment.text(`[${id}] 解析失败: 无效的AV号`)
+
     return await bVParser(BVID)
 }
+
+let forwardNews = null
 
 async function bVParser(id) {
     const { code, data, message } = await getAPI(`https://api.bilibili.com/x/web-interface/view?bvid=${id}`)
@@ -75,8 +79,8 @@ async function bVParser(id) {
     }
 
     const { title, pic, stat } = data
+    forwardNews = [ { text: `[B站解析] ${title}` } ]
 
-    // 将在未来 Karin 实现 segment.node 中的 options 时重写
     return makeForward(
         [
             [
@@ -93,36 +97,63 @@ async function bVParser(id) {
             (CONFIG.video.sendVideo ? [await getVideo(data.aid, data.cid, id)] : [])
         ],
         `114514`,
-        `karin-plugins-alijs`
+        `karin-plugin-alijs`
     )
 }
 
-
 export const BVAVParser = karin.command(new RegExp(`${REGEX.BV.source}|${REGEX.AV.source}`), async e => {
     if (/点赞|投币|播放|弹幕|简介|解析/.test(e.msg) || (!(/B站|Bili|哔哩哔哩|视频/i).test(e.msg))) return
-  
+
+    const { messageId } = await e.reply(`解析中, 请稍后...`, { reply: true })
+
     const [match] = e.msg.match(new RegExp(`${REGEX.BV.source}|${REGEX.AV.source}`))
-    const msg = REGEX.BV.test(match) ? bVParser(match) : aVParser(match)
+    const msg = REGEX.BV.test(match) ? await bVParser(match) : await aVParser(match)
 
     try {
-        await e.reply(await msg)
+        await e.bot.sendForwardMsg(e.contact, msg, {
+            news: forwardNews,
+            prompt: `test1`,
+            summary: `点击查看解析详情`,
+            source: `B站视频解析`
+        })
     } catch (err) {
-        await e.reply(`B站视频解析失败: ${err.message}`)
+        e.reply(`B站视频解析失败: ${err.message}`)
+    } finally {
+        e.bot.recallMsg(e.contact, messageId)
     }
 })
 
 export const B23Parser = karin.command(REGEX.B23, async e => {
     const shortUrl = e.msg.match(REGEX.B23)[0].replace(/\\/g, '')
 
+    let msgId
     let msg
     try {
         const { url } = await fetch(`https://${shortUrl}`)
-        if (REGEX.BV.test(url)) msg = await bVParser(url.match(REGEX.BV)[0])
-        else if (REGEX.AV.test(url)) msg = await aVParser(url.match(REGEX.AV)[0])
-        else msg = null
-    } catch (e) {
-        msg = `B站短链解析失败: ${e.stack}`
-    }
 
-    if(msg) e.reply(msg)
+        const AVMatch = url.match(REGEX.AV)
+        const BVMatch = url.match(REGEX.BV)
+
+        if (AVMatch || BVMatch) {
+            // 仅当短链指向视频时才发送 解析中 消息
+            const { messageId } = e.reply(`解析中, 请稍后...`, { reply: true })
+            msgId = messageId
+
+            if (BVMatch) msg = await bVParser(BVMatch[0])
+            else msg = await aVParser(AVMatch[0])
+        } else {
+            msg = null
+        }
+
+        if (msg) await e.bot.sendForwardMsg(e.contact, msg, {
+            news: forwardNews,
+            prompt: `test1`,
+            summary: `点击查看解析详情`,
+            source: `B站短链解析`
+        })
+    } catch (err) {
+        e.reply(`B站短链解析失败: ${err.stack}`)
+    } finally {
+        e.bot.recallMsg(e.contact, msgId)
+    }
 })
