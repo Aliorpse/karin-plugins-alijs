@@ -1,6 +1,10 @@
 /**
  * #motd [IP] 查询指定服务器信息
  * #mcsadd [Address] 添加群聊默认服务器
+ * 
+ * 如果发现有一些服务器无法查询, 可以选择自建API, 私信QQ3521766148获取服务端或者参考这个项目
+ * https://github.com/Aliorpse/kotlin-mcutils
+ * 你的API直接返回ServerStatus就行
  */
 
 import karin, { segment, render, server } from 'node-karin'
