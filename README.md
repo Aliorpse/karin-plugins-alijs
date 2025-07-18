@@ -37,7 +37,8 @@
     - `sendVideo`: 解析视频时是否返回原视频
   
 - ### MCMotd
-  本插件用于MC服务器信息解析。支持 Java 和 Bedrock 。
+  本插件用于MC服务器信息解析。支持 Java 和 Bedrock 。返回图片示例
+  ![6e17bb7eb1c436dfa156777dec5d7fb8](https://github.com/user-attachments/assets/10a41be7-fc1d-4557-8275-05861c80dcce)
   
     用法:
     - `#motd [IP]` 查询指定服务器信息
