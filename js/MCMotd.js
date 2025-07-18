@@ -8,7 +8,7 @@
  * 你的API直接返回ServerStatus就行
  */
 
-import karin, { segment, render, server } from 'node-karin'
+import karin, { segment, render } from 'node-karin'
 import fs from 'fs'
 
 const REGS = {
@@ -74,73 +74,69 @@ export const motd = karin.command(REGS.MOTD, async (e) => {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .body {
-            width: 900px;
-            height: auto;
-            border-radius: 20px;
-        }
-        .box {
-            display: flex;
-            align-items: center;
-            width: 900px;
-            height: auto;
-            background: #262624;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center center;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            padding: 16px;
-        }
-        .icon {
-            border-radius: 20px;
-        }
-        .divider {
-            width: 2px;
-            height: 120px;
-            background-color: #555;
-            margin: 0 24px;
-        }
-        .info {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            font-family: "阿里巴巴普惠体", sans-serif;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
-        }
-        .motd {
-            font-size: 26px;
-            margin: 0 0 8px 0;
-            white-space: pre-wrap;
-        }
-        .details {
-            font-size: 20px;
-            margin: 0;
-        }
-        .details span.ip {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      width: 900px;
+      margin: 0;
+      font-family: "阿里巴巴普惠体", sans-serif;
+      color: #fff;
+    }
+    .box {
+      display: flex;
+      align-items: center;
+      background: #262624;
+      padding: 16px;
+    }
+    .icon {
+      width: 128px;
+      height: 128px;
+      border-radius: 20px;
+    }
+    .divider {
+      width: 2px;
+      height: 120px;
+      background: #555;
+      margin: 0 24px;
+    }
+    .info {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
+      height: 128px;
+    }
+    .motd {
+      font-size: 26px;
+      margin: 0;
+      white-space: pre-wrap;
+    }
+    .details {
+      font-size: 20px;
+      margin: 0;
+    }
+    .details .ip {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-<body class="body">
-    <div class="box">
-        <img class="icon" src="${serverStatus.favicon ? serverStatus.favicon : defaultFavicon}" alt="icon" width="128" height="128">
-        <div class="divider"></div>
-        <div class="info">
-            <p class="motd">${(renderTextComponent(serverStatus.description.obj)).replace(/\n/g, "\n")}</p>
-            <p class="details">
-                IP: <span class="ip">${serverAddress}</span> | Ping(HK): ${serverStatus.ping}ms<br>
-                在线: ${serverStatus.players.online}/${serverStatus.players.max} | ${serverType} - ${serverStatus.version.name}(${serverStatus.version.protocol})
-            </p>
-        </div>
+<body>
+  <div class="box">
+    <img class="icon" src="${serverStatus.favicon || defaultFavicon}" alt="icon" />
+    <div class="divider"></div>
+    <div class="info">
+      <p class="motd">${renderTextComponent(serverStatus.description.obj)}</p>
+      <p class="details">
+        IP: <span class="ip">${serverAddress}</span> | Ping(HK): ${serverStatus.ping}ms<br />
+        在线: ${serverStatus.players.online}/${serverStatus.players.max} | ${serverType} - ${serverStatus.version.name}(${serverStatus.version.protocol})
+      </p>
     </div>
+  </div>
 </body>
 </html>
-
 `
 
     fs.writeFileSync(`${DATA_BASE_URL}/temp.html`, html, 'utf-8')
@@ -236,3 +232,4 @@ function renderTextComponent(component) {
 
     return result
 }
+
