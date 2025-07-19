@@ -78,7 +78,7 @@ export const motd = karin.command(REGS.MOTD, async (e) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      width: 900px;
+      width: 1000px;
       margin: 0;
       font-family: "阿里巴巴普惠体", sans-serif;
       color: #fff;
@@ -155,7 +155,6 @@ async function fetchServerStatus(ip, port) {
                 : _port
 
             const res = await fetch(`${API_BASE_URL}?host=${ip}&port=${actualPort}&type=${type}`)
-            console.log(res)
             return await res.json()
         } catch (_) {
             return null
@@ -232,4 +231,3 @@ function renderTextComponent(component) {
 
     return result
 }
-
