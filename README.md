@@ -2,7 +2,6 @@
 
 # karin-plugins-alijs
 
-
 <p align="center">
   <img src="https://img.shields.io/badge/Karin-f0f0f0?style=for-the-badge" alt="karin">
   <img src="https://img.shields.io/github/license/Aliorpse/karin-plugins-alijs?style=for-the-badge" alt="license">
@@ -19,6 +18,7 @@
 - 用法: 详见各 App 插件内部注释
 
 ## 插件列表
+
 | 名称 | 源码 | 跳转帮助 |
 |:-----|:-----|:-----|
 | B站解析 | [BiliParser](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/BiliParser.js) | [点我跳转](#BiliParser) |
@@ -28,9 +28,9 @@
 | 函数求**导**器 |[FuncEvaluator](https://github.com/Aliorpse/karin-plugins-alijs/blob/main/js/function_evaluator.js) | [点我跳转](#FuncEvaluator) |
 
 ## 使用说明
+
 - ### BiliParser
-  本插件用于B站链接解析。可以解析视频<del>，番剧，个人空间，</del>(冗余功能，已移除，可自行寻找老版本) 以及短链。<br>
-  插件根据 BV 号，AV 号等匹配，发送链接或BV号等均可返回解析(除了个人空间)
+  本插件用于B站链接解析。可以解析视频<del>，番剧，个人空间，</del>(冗余功能，已移除，可自行寻找老版本) 以及短链。
   
     配置文件:
     - `sendLink`: 信息是否包括原链接
@@ -66,5 +66,6 @@
     - `(#|/)求导[常数]` 开! 导!
 
 ## 致谢
+
 - [BV号转AV号](https://www.zhihu.com/question/381784377/answer/1099438784)
 - [导数分割算法](https://github.com/hect0x7/JMComic-Crawler-Python)
