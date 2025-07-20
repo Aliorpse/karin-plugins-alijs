@@ -8,7 +8,7 @@
  * 你的API直接返回ServerStatus就行
  */
 
-import karin, { segment, render, karinPathTemp } from 'node-karin'
+import karin, { segment, render, karinPathTemp, logger } from 'node-karin'
 import fs, { promises as fsp } from 'fs'
 import path from 'path'
 
@@ -76,25 +76,49 @@ export const motd = karin.command(REGS.MOTD, async (e) => {
 
   const { messageId } = await e.reply(`正在查询 ${serverAddress}, 请稍后...`, { reply: true })
 
-  let serverStatus = await fetchServerStatus(ip, port)
-  const imgJava = serverStatus.javaStatus ? await renderData(serverStatus.javaStatus, serverAddress) : null
-  const imgBedrock = serverStatus.bedrockStatus ? await renderData(serverStatus.bedrockStatus, serverAddress) : null
+  const [imgJava, imgBedrock] = await fetchServerStatus(ip, port)
 
   if (!imgJava && !imgBedrock) {
     await e.reply(`查询失败, 请稍后再试`, { recallMsg: 30, reply: true })
-    return await e.bot.recallMsg(e.contact, messageId)
+  } else {
+    await e.reply(
+      [
+        imgJava ? segment.image(`base64://${imgJava}`) : "",
+        imgBedrock ? segment.image(`base64://${imgBedrock}`) : ""
+      ]
+      , { reply: true }
+    )
   }
-
-  await e.reply(
-    [
-      imgJava ? segment.image(`base64://${imgJava}`) : "",
-      imgBedrock ? segment.image(`base64://${imgBedrock}`) : ""
-    ]
-    , { reply: true }
-  )
 
   return await e.bot.recallMsg(e.contact, messageId)
 })
+
+async function fetchServerStatus(ip, port) {
+  const fetchStatus = async (type, _port) => {
+    // if port undefined, java uses 25565 and bedrock uses 19132
+    const actualPort = port === undefined
+      ? type === 'JAVA' ? 25565 : 19132
+      : _port
+
+    try {
+      const res = await fetch(`${API_BASE_URL}?host=${ip}&port=${actualPort}&type=${type}`)
+      return await res.json()
+    } catch (_) {
+      return null
+    }
+  }
+
+  return await Promise.all([
+    (async () => {
+      const raw = await fetchStatus('JAVA', port)
+      return raw ? renderData(raw, `${ip}:${port ?? 25565}`) : null
+    })(),
+    (async () => {
+      const raw = await fetchStatus('BEDROCK', port)
+      return raw ? renderData(raw, `${ip}:${port ?? 19132}`) : null
+    })()
+  ])
+}
 
 async function renderData(serverStatus, serverAddress) {
   const serverType = serverStatus.hasOwnProperty("enforcesSecureChat") ? "Java" : "Bedrock"
@@ -170,29 +194,6 @@ async function renderData(serverStatus, serverAddress) {
   const time = new Date().getTime()
   fs.writeFileSync(`${TEMP_BASE_URL}/temp-${time}.html`, html, 'utf-8')
   return await render.renderHtml(`${TEMP_BASE_URL}/temp-${time}.html`)
-}
-
-async function fetchServerStatus(ip, port) {
-  const fetchStatus = async (type, _port) => {
-    try {
-      // if port undefined, java uses 25565 and bedrock uses 19132
-      const actualPort = port === undefined
-        ? type === 'JAVA' ? 25565 : 19132
-        : _port
-
-      const res = await fetch(`${API_BASE_URL}?host=${ip}&port=${actualPort}&type=${type}`)
-      return await res.json()
-    } catch (_) {
-      return null
-    }
-  }
-
-  const [javaStatus, bedrockStatus] = await Promise.all([
-    fetchStatus('JAVA', port),
-    fetchStatus('BEDROCK', port),
-  ])
-
-  return { javaStatus, bedrockStatus }
 }
 
 const NamedColorMap = {
