@@ -3,7 +3,7 @@ import karin, { makeForward, segment } from 'node-karin'
 const CONFIG = {
     video: {
         sendLink: true,
-        sendVideo: true
+        sendVideo: false
     },
 }
 
@@ -99,8 +99,8 @@ async function bVParser(id) {
                     `\n收藏: ${stat.favorite.formatted()} | 评论: ${stat.reply.formatted()}`
                 ),
             ],
-            (CONFIG.video.sendVideo ? [await getVideo(data.aid, data.cid, id)] : [])
-        ],
+            (CONFIG.video.sendVideo ? [await getVideo(data.aid, data.cid, id)] : null)
+        ].filter(Boolean),
         `114514`,
         `karin-plugins-alijs`
     )
