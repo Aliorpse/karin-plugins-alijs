@@ -96,19 +96,19 @@ export const motd = karin.command(REGS.MOTD, async (e) => {
 
 async function fetchServerStatus(ip, port) {
   const fetchStatus = async (type, _port) => {
-    // if port undefined, java uses 25565 and bedrock uses 19132
+    // Java default port is 25565, Bedrock default port is 19132
     const actualPort = port === undefined
       ? type === 'JAVA' ? 25565 : 19132
       : _port
-
+  
     try {
-      const res = await fetch(`${API_BASE_URL}?host=${ip}&port=${actualPort}&type=${type}`)
+      const res = await fetch(`${API_BASE_URL}/${type}?host=${ip}&port=${actualPort}`)
       return await res.json()
     } catch (_) {
       return null
     }
   }
-
+  
   return await Promise.all([
     (async () => {
       const raw = await fetchStatus('JAVA', port)
