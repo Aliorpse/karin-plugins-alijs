@@ -2,10 +2,8 @@
  * #motd [IP] 查询指定服务器信息
  * #mcsadd [Address] 添加群聊默认服务器
  * 
- * 如果发现有一些服务器无法查询, 可以选择自建API, 私信QQ3521766148获取服务端或者参考以下链接
+ * 如果发现有一些服务器无法查询, 可以选择自建API, 参考这个链接
  * https://github.com/Aliorpse/kotlin-mcutils
- * https://aliorpse.github.io/kotlin-mcutils/mcutils/tech.aliorpse.mcutils.model.status/-server-status/index.html
- * 你的API返回ServerStatus, 只需要给Color增加一个序列化器, 使得Color.Custom的输出能够被序列化为字符串而不是对象
  */
 
 import karin, { segment, render, karinPathTemp } from 'node-karin'
@@ -69,15 +67,9 @@ export const motd = karin.command(REGS.MOTD, async (e) => {
     return e.reply('用法: #motd [IP Address]\n你可以通过"#mcsadd [IP Address]"来增设本群默认服务器', { recallMsg: 30, reply: true })
   }
 
-  const [ip, port] = serverAddress.split(':')
-
-  if (ip.match(/127\..*/) || ip === "localhost") {
-    return e.reply("不支持查询回环地址", { recallMsg: 30, reply: true })
-  }
-
   const { messageId } = await e.reply(`正在查询 ${serverAddress}, 请稍后...`, { reply: true })
 
-  const [imgJava, imgBedrock] = await fetchServerStatus(ip, port)
+  const [imgJava, imgBedrock] = await fetchServerStatus(serverAddress)
 
   if (!imgJava && !imgBedrock) {
     await e.reply(`查询失败, 请稍后再试`, { recallMsg: 30, reply: true })
@@ -94,29 +86,24 @@ export const motd = karin.command(REGS.MOTD, async (e) => {
   return await e.bot.recallMsg(e.contact, messageId)
 })
 
-async function fetchServerStatus(ip, port) {
-  const fetchStatus = async (type, _port) => {
-    // Java default port is 25565, Bedrock default port is 19132
-    const actualPort = port === undefined
-      ? type === 'JAVA' ? 25565 : 19132
-      : _port
-  
+async function fetchServerStatus(serverAddress) {
+  const fetchStatus = async (type) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/${type}?host=${ip}&port=${actualPort}`)
+      const res = await fetch(`${API_BASE_URL}/${serverAddress}?type=${type}`)
       return await res.json()
-    } catch (_) {
+    } catch {
       return null
     }
   }
-  
+
   return await Promise.all([
     (async () => {
-      const raw = await fetchStatus('JAVA', port)
-      return raw ? renderData(raw, `${ip}:${port ?? 25565}`) : null
+      const raw = await fetchStatus('java')
+      return raw ? renderData(raw, 'Java') : null
     })(),
     (async () => {
-      const raw = await fetchStatus('BEDROCK', port)
-      return raw ? renderData(raw, `${ip}:${port ?? 19132}`) : null
+      const raw = await fetchStatus('bedrock')
+      return raw ? renderData(raw, 'Bedrock') : null
     })()
   ])
 }
@@ -192,9 +179,14 @@ async function renderData(serverStatus, serverAddress) {
 </body>
 </html>
 `
-  const time = new Date().getTime()
-  fs.writeFileSync(`${TEMP_BASE_URL}/temp-${time}.html`, html, 'utf-8')
-  return await render.renderHtml(`${TEMP_BASE_URL}/temp-${time}.html`)
+  const filePath = `${TEMP_BASE_URL}/temp-${Date.now()}.html`
+
+  try {
+    fs.writeFileSync(filePath, html, 'utf-8')
+    return await render.renderHtml(filePath)
+  } finally {
+    fs.unlinkSync(filePath)
+  }
 }
 
 const NamedColorMap = {
