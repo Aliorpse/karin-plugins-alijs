@@ -99,11 +99,11 @@ async function fetchServerStatus(serverAddress) {
   return await Promise.all([
     (async () => {
       const raw = await fetchStatus('java')
-      return raw ? renderData(raw, 'Java') : null
+      return raw ? renderData(raw, serverAddress) : null
     })(),
     (async () => {
       const raw = await fetchStatus('bedrock')
-      return raw ? renderData(raw, 'Bedrock') : null
+      return raw ? renderData(raw, serverAddress) : null
     })()
   ])
 }
