@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/github/stars/Aliorpse/karin-plugins-alijs?style=for-the-badge" alt="stars">
 </p>
 
-<i align="center">简洁，强大，快速的 Karin App 插件仓库。</i>
+<i align="center">个人 Karin App 插件仓库。</i>
 
 </div>
 
