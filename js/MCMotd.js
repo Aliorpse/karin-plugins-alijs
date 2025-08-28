@@ -169,9 +169,9 @@ async function renderData(serverStatus, serverAddress) {
     <img class="icon" src="${serverStatus.favicon || defaultFavicon}" alt="icon" />
     <div class="divider"></div>
     <div class="info">
-      <p class="motd">${renderTextComponent(serverStatus.description.obj)}</p>
+      <p class="motd">${renderTextComponent(serverStatus.description)}</p>
       <p class="details">
-        IP: <span class="ip">${serverAddress}</span> | Ping(HK): ${serverStatus.ping}ms<br />
+        IP: <span class="ip">${serverAddress}</span> | Ping(HK): ${serverStatus.ping ?? "N/A"}ms<br />
         在线: ${serverStatus.players.online}/${serverStatus.players.max} | ${serverType} - ${serverStatus.version.name}(${serverStatus.version.protocol})
       </p>
     </div>
@@ -179,75 +179,39 @@ async function renderData(serverStatus, serverAddress) {
 </body>
 </html>
 `
+
   const filePath = `${TEMP_BASE_URL}/temp-${Date.now()}.html`
 
   try {
-    fs.writeFileSync(filePath, html, 'utf-8')
+    fs.writeFileSync(filePath, html, "utf-8")
     return await render.renderHtml(filePath)
   } finally {
     fs.unlinkSync(filePath)
   }
 }
 
-const NamedColorMap = {
-  BLACK: "#000000",
-  DARK_BLUE: "#0000AA",
-  DARK_GREEN: "#00AA00",
-  DARK_AQUA: "#00AAAA",
-  DARK_RED: "#AA0000",
-  DARK_PURPLE: "#AA00AA",
-  GOLD: "#FFAA00",
-  GRAY: "#AAAAAA",
-  DARK_GRAY: "#555555",
-  BLUE: "#5555FF",
-  GREEN: "#55FF55",
-  AQUA: "#55FFFF",
-  RED: "#FF5555",
-  LIGHT_PURPLE: "#FF55FF",
-  YELLOW: "#FFFF55",
-  WHITE: "#FFFFFF"
-}
-
 function escapeHtml(text) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
 function renderTextComponent(component) {
   if (!component) return ""
 
-  const render = (obj) => {
-    const {
-      text = "",
-      color,
-      bold,
-      italic,
-      underlined,
-      strikethrough,
-      obfuscated,
-    } = obj
+  const { text = "", color = "#FFFFFF", style = [], extra = [] } = component
 
-    let style = ""
+  let css = ""
+  if (color) css += `color: ${color.toLowerCase()};`
+  if (style.includes("BOLD")) css += "font-weight: bold;"
+  if (style.includes("ITALIC")) css += "font-style: italic;"
+  if (style.includes("UNDERLINED")) css += "text-decoration: underline;"
+  if (style.includes("STRIKETHROUGH")) css += "text-decoration: line-through;"
+  if (style.includes("OBFUSCATED")) css += "filter: blur(2px);"
 
-    const finalColor = (NamedColorMap[color?.toUpperCase()] || color || "#FFFFFF").toLowerCase()
-    if (finalColor) style += `color: ${finalColor};`
-    if (bold) style += "font-weight: bold;"
-    if (italic) style += "font-style: italic;"
-    if (underlined) style += "text-decoration: underline;"
-    if (strikethrough) style += "text-decoration: line-through;"
-    if (obfuscated) style += "filter: blur(2px);"
+  let html = `<span style="${css}">${escapeHtml(text)}</span>`
 
-    return `<span style="${style}">${escapeHtml(text)}</span>`
-  };
-
-  let result = render(component)
-  if (Array.isArray(component.extra)) {
-    for (const child of component.extra) {
-      result += renderTextComponent(child)
-    }
+  if (extra.length) {
+    html += extra.map(renderTextComponent).join("")
   }
 
-  return result
+  return html
 }
