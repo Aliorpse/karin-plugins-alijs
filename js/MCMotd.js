@@ -169,7 +169,7 @@ async function renderData(serverStatus, serverAddress) {
     <img class="icon" src="${serverStatus.favicon || defaultFavicon}" alt="icon" />
     <div class="divider"></div>
     <div class="info">
-      <p class="motd">${renderTextComponent(serverStatus.description)}</p>
+      <p class="motd">${serverStatus.description.html}</p>
       <p class="details">
         IP: <span class="ip">${serverAddress}</span> | Ping(HK): ${serverStatus.ping ?? "N/A"}ms<br />
         在线: ${serverStatus.players.online}/${serverStatus.players.max} | ${serverType} - ${serverStatus.version.name}(${serverStatus.version.protocol})
@@ -188,30 +188,4 @@ async function renderData(serverStatus, serverAddress) {
   } finally {
     fs.unlinkSync(filePath)
   }
-}
-
-function escapeHtml(text) {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-}
-
-function renderTextComponent(component) {
-  if (!component) return ""
-
-  const { text = "", color = "#FFFFFF", style = [], extra = [] } = component
-
-  let css = ""
-  if (color) css += `color: ${color.toLowerCase()};`
-  if (style.includes("BOLD")) css += "font-weight: bold;"
-  if (style.includes("ITALIC")) css += "font-style: italic;"
-  if (style.includes("UNDERLINED")) css += "text-decoration: underline;"
-  if (style.includes("STRIKETHROUGH")) css += "text-decoration: line-through;"
-  if (style.includes("OBFUSCATED")) css += "filter: blur(2px);"
-
-  let html = `<span style="${css}">${escapeHtml(text)}</span>`
-
-  if (extra.length) {
-    html += extra.map(renderTextComponent).join("")
-  }
-
-  return html
 }
